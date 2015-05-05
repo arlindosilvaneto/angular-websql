@@ -13,7 +13,7 @@ angular.module("angular-websql", []).factory("$webSql", ["$q", "$cordovaSQLite",
 					var db;
 
 					if($window.sqlitePlugin) {
-						$cordovaSQLite.openDB({ name: dbName + ".db", bgType: 1 });
+						db = $cordovaSQLite.openDB({ name: dbName + ".db", bgType: 1 });
 					} else {
 						db  = openDatabase(dbName, version, desc, size);
 					}
@@ -21,9 +21,9 @@ angular.module("angular-websql", []).factory("$webSql", ["$q", "$cordovaSQLite",
 					return {
 						executeQuery: function(query, values) {
 							if($window.sqlitePlugin) {
-								this.executeCordova(query, values);
+								return this.executeCordova(query, values);
 							} else {
-								this.executeWeb(query, values);
+								return this.executeWeb(query, values);
 							}
 						},
 						executeCordova: function(query, values) {
