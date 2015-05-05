@@ -5,16 +5,38 @@
  * @version 1.0.2
  */
 "use strict";
-angular.module("angular-websql", []).factory("$webSql", ["$q",
-	function($q) {
+angular.module("angular-websql", []).factory("$webSql", ["$q", "$cordovaSQLite", "$window",
+	function($q, $cordovaSQLite, $window) {
 		return {
 			openDatabase: function(dbName, version, desc, size) {
 				try {
-					var db = openDatabase(dbName, version, desc, size);
-					if (typeof(openDatabase) == "undefined")
-						throw "Browser does not support web sql";
+					var db;
+
+					if($window.sqlitePlugin) {
+						$cordovaSQLite.openDB({ name: dbName + ".db", bgType: 1 });
+					} else {
+						db  = openDatabase(dbName, version, desc, size);
+					}
+
 					return {
 						executeQuery: function(query, values) {
+							if($window.sqlitePlugin) {
+								this.executeCordova(query, values);
+							} else {
+								this.executeWeb(query, values);
+							}
+						},
+						executeCordova: function(query, values) {
+							var deferred = $q.defer();
+							$cordovaSQLite.execute(db, query, values, function(tx, results) {
+								deferred.resolve(results);
+							}, function(tx, e){
+								console.log("There has been an error: " + e.message);
+								deferred.reject();
+							});
+							return deferred.promise;
+						},
+						executeWeb: function(query, values) {
 							var deferred = $q.defer();
 							db.transaction(function(tx) {
 								tx.executeSql(query, values, function(tx, results) {
