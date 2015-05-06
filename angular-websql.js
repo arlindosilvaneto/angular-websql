@@ -6,21 +6,29 @@
  */
 "use strict";
 angular.module("angular-websql", []).factory("$webSql", ["$q", "$cordovaSQLite", "$window",
-	function($q, $cordovaSQLite, $window) {
+	function($q, $cordovaSQLite, $window) {		
+
 		return {
+			isNative: function() {
+				return ($window.sqlitePlugin !== undefined);;
+			},
 			openDatabase: function(dbName, version, desc, size) {
+				var isSqliteNative = ($window.sqlitePlugin !== undefined);
+
 				try {
 					var db;
 
-					if($window.sqlitePlugin) {
-						db = $cordovaSQLite.openDB({ name: dbName + ".db", bgType: 1 });
+					if(isSqliteNative) {
+						console.log('Native SQLite');
+						db = $cordovaSQLite.openDB({ name: dbName + ".db" });
 					} else {
-						db  = openDatabase(dbName, version, desc, size);
+						console.log('Browser SQLite');
+						db = openDatabase(dbName, version, desc, size);
 					}
 
 					return {
 						executeQuery: function(query, values) {
-							if($window.sqlitePlugin) {
+							if(isSqliteNative) {
 								return this.executeCordova(query, values);
 							} else {
 								return this.executeWeb(query, values);
@@ -28,9 +36,9 @@ angular.module("angular-websql", []).factory("$webSql", ["$q", "$cordovaSQLite",
 						},
 						executeCordova: function(query, values) {
 							var deferred = $q.defer();
-							$cordovaSQLite.execute(db, query, values, function(tx, results) {
+							$cordovaSQLite.execute(db, query, values).then(function(results) {
 								deferred.resolve(results);
-							}, function(tx, e){
+							}, function(e){
 								console.log("There has been an error: " + e.message);
 								deferred.reject();
 							});
