@@ -20,7 +20,11 @@ angular.module("angular-websql", []).factory("$webSql", ["$q", "$cordovaSQLite",
 
 					if(isSqliteNative) {
 						console.log('Native SQLite');
-						db = $cordovaSQLite.openDB({ name: dbName + ".db" });
+						if(ionic && ionic.Platform.isIOS()) {
+							db = $window.sqlitePlugin.openDatabase({ name: dbName + ".db", location: 1 });
+						} else {
+							db = $cordovaSQLite.openDB({ name: dbName + ".db" });
+						}
 					} else {
 						console.log('Browser SQLite');
 						db = openDatabase(dbName, version, desc, size);
